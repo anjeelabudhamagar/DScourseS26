@@ -158,32 +158,81 @@ Final grades will be assigned according to the standard cutoffs (90%+ for an A, 
 
 ## AI policy ##
 
-You are allowed and encouraged to use artificial intelligence (AI) resources in all aspects of this course. This includes, but is not limited to, using AI to help you write code, to help you debug code, to help you find answers to questions, and to help you find data. You are also allowed and encouraged to use AI to help you with your problem sets and final project. 
+You are allowed and encouraged to use artificial intelligence (AI) resources in all aspects of this course. This includes, but is not limited to, using AI to help you write code, to help you debug code, to help you find answers to questions, and to help you find data. You are also allowed and encouraged to use AI to help you with your problem sets and final project. You are not allowed to use AI on in-class assessments such as quizzes or exams unless explicitly permitted by the instructor.
 
 ## University Policies ## 
+
+### Mental Health Support Services ###
+
+Support is available for any student experiencing mental health issues that are impacting their academic success. Students can either been seen at the University Counseling Center (UCC) located on the second floor of Goddard Health Center or receive 24/7/365 crisis support from a licensed mental health provider through TimelyCare. To schedule an appointment or receive more information about mental health resources at OU please call the UCC at 405-325-2911 or visit [University Counseling Center](https://www.ou.edu/ucc). The UCC is located at 620 Elm Ave., Room 201, Norman, OK 73019.
+
+### Title IX Resources and Reporting Requirement ###
+
+The University of Oklahoma faculty are committed to creating a safe learning environment for all members of our community, free from sex-based discrimination, including sexual harassment, domestic and dating violence, sexual assault, and stalking, in accordance with Title IX. There are resources available to those impacted, including: speaking with someone confidentially about your options, medical attention, counseling, reporting, academic support, and safety plans. If you have (or someone you know has) experienced any form of sex-based discrimination or violence and wish to speak with someone confidentially, please contact OU Advocates (available 24/7 at 405-615-0013) or University Counseling Center (M-F 8 a.m. to 5 p.m. at 405-325-2911).
+
+Because the University of Oklahoma is committed to the safety of you and other students, and because of our Title IX obligations, I, as well as other faculty, Graduate Assistants, and Teaching Assistants, are mandatory reporters. This means that we are obligated to report sex-based violence that has been disclosed to us to the Institutional Equity Office. This includes disclosures that occur in: class discussion, writing assignments, discussion boards, emails and during Student/Office Hours. You may also choose to report directly to the Institutional Equity Office. After a report is filed, the Title IX Coordinator will reach out to provide resources, support, and information and the reported information will remain private. For more information regarding the University's Title IX Grievance procedures, reporting, or support measures, please visit [Institutional Equity Office](https://www.ou.edu/eoo) at 405-325-3546.
+
+### Reasonable Accommodation Policy ###
+
+The University of Oklahoma (OU) is committed to the goal of achieving equal educational opportunity and full educational participation for students with disabilities. If you have already established reasonable accommodations with the Accessibility and Disability Resource Center (ADRC), please log into iAdvise to request your semester accommodations as soon as possible and contact me privately, so that we have adequate time to arrange your approved academic accommodations.
+
+If you have not yet established services through ADRC, but have a documented disability and require accommodations, please complete ADRC's pre-registration form to begin the registration process. ADRC facilitates the interactive process that establishes reasonable accommodations for students at OU. For more information on ADRC registration procedures, please review their website. You may also contact them at (405) 325-3852 or adrc@ou.edu, or visit [www.ou.edu/adrc](http://www.ou.edu/adrc) for more information.
+
+Note: disabilities may include, but are not limited to, mental health, chronic health, physical, vision, hearing, learning and attention disabilities, pregnancy-related. ADRC can also support students experiencing temporary medical conditions.
 
 ### Religious Observance ###
 
 It is the policy of the University to excuse the absences of students that result from religious observances and to reschedule examinations and additional required classwork that may fall on religious holidays, without penalty.
 
-### Reasonable Accommodation Policy ###
+### Adjustments for Pregnancy and Related Issues ###
 
-If a student requires an accommodation based on disability, the student should meet with me in my office during the first week of the semester. Student responsibility primarily rests with informing faculty at the beginning of the semester and in providing authorized documentation through designated administrative channels. The Disability Resource Center is located in the University Community Center at 730 College Avenue (405-325-3852).
+Should you need modifications or adjustments to your course requirements because of pregnancy or a pregnancy-related condition, please request modifications via the [Institutional Equity Office website](https://www.ou.edu/eoo) or call the Institutional Equity Office at 405-325-3546 as soon as possible. Also, see the [Institutional Equity Office FAQ on Pregnant and Parenting Students' Rights](https://www.ou.edu/eoo/faqs/pregnancy-faqs.html) for answers to commonly asked questions.
 
-### Academic Integrity: ###
+### Final Exam Preparation Period ###
+
+Pre-finals week will be defined as the seven calendar days before the first day of finals. Faculty may cover new course material throughout this week. For specific provisions of the policy please refer to OU's [Final Exam Preparation Period policy](https://www.ou.edu/provost/course-scheduling/final-exam-policies).
+
+### Emergency Protocol ###
+
+During an emergency, there are official university procedures that will maximize your safety.
+
+**Severe Weather:** If you receive an OU Alert to seek refuge or hear a tornado siren that signals severe weather:
+
+1. Look for severe weather refuge location maps located inside most OU buildings near the entrances.
+2. Seek refuge inside a building. Do not leave one building to seek shelter in another building that you deem safer. If outside, get into the nearest building.
+3. Go to the building's severe weather refuge location. If you do not know where that is, go to the lowest level possible and seek refuge in an innermost room. Avoid outside doors and windows.
+4. Get in, Get Down, Cover Up
+5. Wait for official notice to resume normal activities.
+
+Additional Weather Safety Information is available through the [Department of Campus Safety](https://www.ou.edu/police).
+
+### The University of Oklahoma Active Threat Guidance ###
+
+The University of Oklahoma embraces a Run, Hide, Fight strategy for active threats on campus. This strategy is well known, widely accepted, and proven to save lives. To receive emergency campus alerts, be sure to update your contact information and preferences in the account settings section at one.ou.edu.
+
+**RUN:** Running away from the threat is usually the best option. If it is safe to run, run as far away from the threat as possible. Call 911 when you are in a safe location and let them know from which OU campus you're calling from and location of active threat.
+
+**HIDE:** If running is not practical, the next best option is to hide. Lock and barricade all doors; turn off all lights; turn down your phone's volume; search for improvised weapons; hide behind solid objects and walls; and hide yourself completely and stay quiet. Remain in place until law enforcement arrives. Be patient and remain hidden.
+
+**FIGHT:** If you are unable to run or hide, the last best option is to fight. Have one or more improvised weapons with you and be prepared to attack. Attack them when they are least expecting it and hit them where it hurts most: the face (specifically eyes, nose, and ears), the throat, the diaphragm (solar plexus), and the groin.
+
+Please save OUPD's contact information in your phone:
+* **NORMAN campus:** For non-emergencies call (405) 325-1717. For emergencies call (405) 325-1911 or dial 911.
+* **TULSA campus:** For non-emergencies call (918) 660-3900. For emergencies call (918) 660-3333 or dial 911.
+
+### Fire Alarm/General Emergency ###
+
+If you receive an OU Alert that there is danger inside or near the building, or the fire alarm inside the building activates:
+
+1. LEAVE the building. Do not use the elevators.
+2. KNOW at least two building exits
+3. ASSIST those that may need help
+4. PROCEED to the emergency assembly area
+5. ONCE safely outside, NOTIFY first responders of anyone that may still be inside building due to mobility issues.
+6. WAIT for official notice before attempting to re-enter the building.
+
+[OU Fire Safety on Campus](https://www.ou.edu/police/fire)
+
+### Academic Integrity ###
 
 I do not tolerate academic misconduct, [and neither does the University of Oklahoma](http://integrity.ou.edu/files/nine_things_you_should_know.pdf). I will not hesitate to fail students who do not fully comply with the University's academic misconduct policy. If you find yourself contemplating cheating, plagiarism, or other forms of academic misconduct, please come see me first. Help is available if you are struggling. I want everyone in the class to try their best and to do their own work. Please be advised that I reserve the right to utilize anti-plagiarism resources such as TurnItIn when grading assignments.
-
-### Title IX Resources and Reporting Requirement ###
-
-For any concerns regarding gender-based discrimination, sexual harassment, sexual assault, dating/domestic violence, or stalking, the University offers a variety of resources. To learn more or to report an incident, please contact the Sexual Misconduct Office at (405) 325-2215 (8 to 5, M-F) or [smo@ou.edu](mailto:smo@ou.edu). Incidents can also be reported confidentially to OU Advocates at (405) 615-0013 (phones are answered 24 hours a day, 7 days a week). Also, please be advised that a professor/GA/TA is required to report instances of sexual harassment, sexual assault, or discrimination to the Sexual Misconduct Office. Inquiries regarding non-discrimination policies may be directed to: Bobby J. Mason, University Equal Opportunity Officer and Title IX Coordinator at (405) 325-3546 or [bjm@ou.edu](mailto:bjm@ou.edu). For more information, visit http://www.ou.edu/eoo.html.
-
-### Adjustments for Pregnancy/Childbirth Related Issues ###
-
-Should you need modifications or adjustments to your course requirements because of documented pregnancy-related or childbirth-related issues, please contact your professor or the Disability Resource Center at (405) 325-3852 as soon as possible. Also, see http://www.ou.edu/eoo/faqs/pregnancy-faqs.html for answers to commonly asked questions.
-
-
-### Reasonable Accommodations for Students with Disabilities ###
-
-If a student requires an accommodation based on disability, the student should meet with me in my office during the first week of the semester. Student responsibility primarily rests with informing faculty at the beginning of the semester and in providing authorized documentation through designated administrative channels. The Disability Resource Center is located in Goddard Hall (405-325-3852).
-
