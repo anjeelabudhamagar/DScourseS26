@@ -4,7 +4,7 @@
     <title>Lecture 1</title>
     <meta charset="utf-8" />
     <meta name="author" content="Tyler Ransom" />
-    <script src="01slides_files/header-attrs-2.14/header-attrs.js"></script>
+    <script src="01slides_files/header-attrs-2.29/header-attrs.js"></script>
     <link href="01slides_files/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="01slides_files/remark-css-0.0.1/metropolis.css" rel="stylesheet" />
     <link href="01slides_files/remark-css-0.0.1/metropolis-fonts.css" rel="stylesheet" />
@@ -213,24 +213,23 @@ Source: http://www.chicagotribune.com/bluesky/originals/ct-bsi-inside-job-4c-ins
 
 
 ---
-# ChatGPT
+# Generative AI
 
-- I strongly encourage you to use ChatGPT in all aspects of this class
+- I strongly encourage you to use Generative AI in all aspects of this class
 
-- ChatGPT is a large language model (LLM) developed by OpenAI
+- My favorite is Claude, but ChatGPT and Gemini are equally capable
 
-- Create an account at http://chat.openai.com/
+- I believe Gemini Pro is free for students
 
-- ChatGPT is excellent at producing basic code and helping resolve bugs
+- These tools are powerful enough to do all your work in trivial amounts of time
 
-- It takes most of the headache away from coding, leaving only the fun parts
-
+- .hi[Your challenge will be to force yourself to actually learn the concepts and to not use AI as a crutch]
 
 
 ---
-# ChatGPT example from PS3 later in the semester
+# Claude example from PS3 later in the semester
 
-**Human: (question 5 from PS3)**
+**Me: (question 5 from PS3)**
 
 Write a SQL script that does the following:
 
@@ -248,53 +247,189 @@ buildings are made out of wood or some other material
 
 
 ---
-# ChatGPT example (continued)
+# Claude example (continued)
 
-**Assistant:**
+**Claude:**
 
-Assuming the Florida insurance data is stored in a table called "insurance" and the columns are named "county", "tiv_2011", "tiv_2012", and "construction", the SQL script would be as follows:
+Let me check if there's a standard Florida insurance dataset I should work with, and create a SQL script that will work with the typical structure of this dataset:
 
-.scroll-box-8[
+[looks for uploaded files]
+
+[searches web for "Florida insurance data CSV file"]
+
+[finds it on GitHub]
+
+---
+# Claude example (continued)
+
+**Claude:**
+"I can see the structure of the Florida insurance dataset. The columns include: [...].
+Now I'll create a SQL script using SQLite (which is commonly available) to accomplish all the requested tasks:"
+.scroll-box-12[
 ```sql
+-- ============================================================================
+-- Florida Insurance Data Analysis SQL Script
+-- ============================================================================
+-- This script performs the following analyses on the FL_insurance_sample.csv:
+--   (a) Read in the Florida insurance data CSV file
+--   (b) Print out the first 10 rows of the data set
+--   (c) List unique counties in the sample
+--   (d) Compute average property appreciation from 2011 to 2012
+--   (e) Create a frequency table of the construction variable
+-- ============================================================================
+
+-- Note: This script is written for SQLite. For other database systems,
+-- syntax may vary slightly (e.g., for CSV import).
+
+-- ============================================================================
 -- (a) Read in the Florida insurance data CSV file
-CREATE TABLE insurance (county VARCHAR(255), tiv_2011 INT, tiv_2012 INT, construction VARCHAR(255));
-LOAD DATA INFILE 'florida_insurance.csv' INTO TABLE insurance
-FIELDS TERMINATED BY ','
-ENCLOSED BY '"'
-LINES TERMINATED BY '\n'
-IGNORE 1 ROWS;
+-- ============================================================================
+-- First, create the table structure to match the CSV columns
 
+DROP TABLE IF EXISTS florida_insurance;
+
+CREATE TABLE florida_insurance (
+    policyID            INTEGER,
+    statecode           TEXT,
+    county              TEXT,
+    eq_site_limit       REAL,
+    hu_site_limit       REAL,
+    fl_site_limit       REAL,
+    fr_site_limit       REAL,
+    tiv_2011            REAL,
+    tiv_2012            REAL,
+    eq_site_deductible  REAL,
+    hu_site_deductible  REAL,
+    fl_site_deductible  REAL,
+    fr_site_deductible  REAL,
+    point_latitude      REAL,
+    point_longitude     REAL,
+    line                TEXT,
+    construction        TEXT,
+    point_granularity   INTEGER
+);
+
+-- Import the CSV file (SQLite syntax)
+-- Note: Run this from the SQLite command line with:
+--   .mode csv
+--   .import FL_insurance_sample.csv florida_insurance
+--   (You may need to delete the header row after import or use --skip 1)
+
+-- Alternative: For SQLite 3.32+, you can use:
+-- .import --csv --skip 1 FL_insurance_sample.csv florida_insurance
+
+-- ============================================================================
 -- (b) Print out the first 10 rows of the data set
-SELECT * FROM insurance LIMIT 10;
+-- ============================================================================
 
--- (c) List which counties are in the sample (i.e. list unique values of the county variable)
-SELECT DISTINCT county FROM insurance;
+SELECT '=== PART (b): First 10 Rows of the Dataset ===' AS section;
 
--- (d) Compute the average property appreciation from 2011 to 2012 (i.e. compute the mean of tiv_2012 - tiv_2011)
-SELECT AVG(tiv_2012 - tiv_2011) FROM insurance;
+SELECT 
+    policyID,
+    statecode,
+    county,
+    eq_site_limit,
+    hu_site_limit,
+    fl_site_limit,
+    fr_site_limit,
+    tiv_2011,
+    tiv_2012,
+    eq_site_deductible,
+    hu_site_deductible,
+    fl_site_deductible,
+    fr_site_deductible,
+    point_latitude,
+    point_longitude,
+    line,
+    construction,
+    point_granularity
+FROM florida_insurance
+LIMIT 10;
 
--- (e) Create a frequency table of the construction variable to see what fraction of buildings are made out of wood or some other material
-SELECT construction, COUNT(*) as frequency FROM insurance GROUP BY construction;
+-- ============================================================================
+-- (c) List which counties are in the sample (unique values of county)
+-- ============================================================================
 
+SELECT '=== PART (c): Unique Counties in the Sample ===' AS section;
+
+SELECT DISTINCT county
+FROM florida_insurance
+ORDER BY county;
+
+-- Also show the count of unique counties
+SELECT 
+    COUNT(DISTINCT county) AS total_unique_counties
+FROM florida_insurance;
+
+-- ============================================================================
+-- (d) Compute the average property appreciation from 2011 to 2012
+--     i.e., compute the mean of (tiv_2012 - tiv_2011)
+-- ============================================================================
+
+SELECT '=== PART (d): Average Property Appreciation (2011 to 2012) ===' AS section;
+
+SELECT 
+    AVG(tiv_2012 - tiv_2011) AS avg_appreciation,
+    -- Additional summary statistics for context:
+    MIN(tiv_2012 - tiv_2011) AS min_appreciation,
+    MAX(tiv_2012 - tiv_2011) AS max_appreciation,
+    SUM(tiv_2012 - tiv_2011) AS total_appreciation,
+    COUNT(*) AS n_observations
+FROM florida_insurance;
+
+-- Also compute mean TIV values for context
+SELECT 
+    AVG(tiv_2011) AS avg_tiv_2011,
+    AVG(tiv_2012) AS avg_tiv_2012,
+    AVG(tiv_2012) - AVG(tiv_2011) AS difference_of_means
+FROM florida_insurance;
+
+-- ============================================================================
+-- (e) Create a frequency table of the construction variable
+--     to see what fraction of buildings are made of wood or other material
+-- ============================================================================
+
+SELECT '=== PART (e): Frequency Table of Construction Types ===' AS section;
+
+-- Frequency table with counts and percentages
+SELECT 
+    construction,
+    COUNT(*) AS frequency,
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM florida_insurance), 2) AS percentage
+FROM florida_insurance
+GROUP BY construction
+ORDER BY frequency DESC;
+
+-- Summary showing Wood vs. Other materials
+SELECT '=== Wood vs. Other Materials ===' AS section;
+
+SELECT 
+    CASE 
+        WHEN construction = 'Wood' THEN 'Wood'
+        ELSE 'Other Material'
+    END AS material_category,
+    COUNT(*) AS frequency,
+    ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM florida_insurance), 2) AS percentage
+FROM florida_insurance
+GROUP BY material_category
+ORDER BY frequency DESC;
+
+
+-- ============================================================================
+-- END OF ANALYSIS
+-- ============================================================================
 ```
 ]
-
-Note: This is basic SQL script and it may vary based on the database you are using. You may need to make some modification accordingly.
-
-
-***
-
-Exported on January 17, 2023 10:11 AM.
 
 
 ---
 # Grading
 
-- Because ChatGPT has such a vast potential to help you, I will grade problem sets much more strictly than I have in the past
+- Because Generative AI has such a vast potential to help you, I will grade problem sets much more strictly than I have in the past
 
 - If your code doesn't run, you won't get credit for it
 
-- You should always make sure your code will run start-to-finish and with ChatGPT as a resource, there is no excuse to not turn in perfect code
+- You should always make sure your code will run start-to-finish and with AI as a resource, there is no excuse to not turn in perfect code
 
 
 ---
@@ -315,10 +450,10 @@ Exported on January 17, 2023 10:11 AM.
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 <script>var slideshow = remark.create({
-"highlightStyle": "github",
-"highlightLines": true,
-"countIncrementalSlides": false,
-"ratio": "16:9"
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false,
+  "ratio": "16:9"
 });
 if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
   window.dispatchEvent(new Event('resize'));
