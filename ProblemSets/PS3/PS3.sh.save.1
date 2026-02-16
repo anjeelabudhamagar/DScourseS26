@@ -1,0 +1,12 @@
+#/bin/sh.
+(a) The wget command allows you to download a file from a URL right from the command line. Try it out by typing
+wget http://spatialkeydocs.s3.amazonaws.com/FL_insurance_sample.csv.zip at the command line. This will download the file contained at the preceding URL, which is a sample data set on Florida property insurance provided by a company called SpatialKeyTM.
+(b) Type ls to see the contents of the current directory. You should see a file called FL_insurance_sample.csv.zip, which is a compressed (ZIP) file.
+(c) The way to uncompress a file with a .zip extension is with unzip. Type unzip FL_insurance_sample.csv.zip
+(d) You will now notice that the system created a folder called __MACOSX/ in your current. This is because the company that provided the data used Mac OS to zip the file. Let’s delete that, along with the .zip file, by issuing the rm command: rm -rf __MACOSX followed by rm -f FL_insurance_sample.csv.zip.
+(e) Nowlet’scheckhowbigthefilesizeis.Thisisdonebytypingls -al --block-size=MB FL_insurance_sample.csv
+(f) When downloading a file it is sometimes also useful to examine the first N lines ofthefile.Theheadcommandprovidesthisoption:head -5 FL_insurance_sample.csv
+(g) Something is weird here wc -l FL_insurance_sample.csv
+(h) It turns out that the file we are dealing with has a problem with its “end of line” (EOL) interpreter. Because the file was created on Mac OS, it isn’t formatted appropriately to be read on a Linux system. Knowing how to fix EOL conversion issues is a key skill for a data scientist to have We can convert the file to what we need by typing dos2unix -c mac FL_insurance_sample.csv
+(i) Now run head again and you should be able to see something that resembles a CSV file.
+(j) Run wc again and there should be more than one line in the file
