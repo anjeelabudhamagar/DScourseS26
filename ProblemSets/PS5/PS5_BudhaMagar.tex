@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+
+\title{PS5}
+\author{Anjeela Budha Magar}
+\date{March 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Question 3}
+\subsection*{What about it interests you? Will it be useful to you at some point in the future? Did you use any online tutorials to help you parse the data? If so, which ones?}
+
+\subsection*{Answer} I selected the CNBC website because it provides frequently updated financial news related to economics and markets. The data collected from CNBC may be useful in analyzing market trends for observation and analysis. I used SelectorGadget to parse the particular headline elements of my interest. I referred to YouTube and ChatGPT to guide me on how to use the Selector Gadget as well as to parse the data. 
+
+\vspace{0.5cm}
+\textbf{R Script}
+\begin{verbatim}
+library(rvest)
+library(dplyr)
+
+url<- "https://www.cnbc.com/"
+page<- read_html(url)
+
+titles<- page %>%
+html_nodes(".Card-title") %>%
+html_text(trim = TRUE)
+
+data<- data.frame(title = titles)
+data<- distinct(data)
+
+head(data)
+
+write.csv(data, "cnbc_headlines.csv", row.names = FALSE)
+
+
+\end{verbatim}
+
+\section{Question 4}
+\subsection*{Tell me about what you found in the data (if anything) that was interesting or useful to you. What packages did you use (if any)?}
+\subsection*{Answer} I looked at Producer Price Index on the FRED website. The data set contains monthly price level changes in production inputs, which can be used to understand the inflationary pressure in the economy. I found it particularly interesting as there has been ongoing debate about the federal funds rate being lowered and balancing it with inflationary pressures.I used R to be able to apply the API key feature and used the fredr, dplyr, ggplot2, and usethis library. 
+
+\vspace{0.5cm}
+\textbf{R Script}
+\begin{verbatim}
+library("fredr")
+library("dplyr")
+library("ggplot2")
+library("usethis")
+
+fredr_set_key(Sys.getenv("FRED_API_KEY"))
+ppi<- fredr(
+  series_id = "PPIACO",
+  observation_start = as.Date("2000-01-01")
+)
+head(ppi)
+
+\end{verbatim}
+
+\end{document}
