@@ -1,0 +1,115 @@
+\documentclass{article}
+\usepackage{graphicx} 
+\usepackage{float}   
+\usepackage{hyperref}
+
+\title{Problem Set 6}
+\author{Anjeela Budha Magar}
+\date{March 2026}
+
+\begin{document}
+
+\maketitle
+
+% =========================
+\section*{Part 3: Data Cleaning and Transformation}
+
+Describe the steps you took to clean and transform the data. Write code in R,
+Python, or Julia to execute the steps described. Your submitted script
+should be completely reproducible by the instructor.
+\subsection*{Answer}
+I took the following steps in R to clean and transform the data:
+\begin{enumerate}
+    \item \textbf{Load necessary libraries:}
+\begin{verbatim}
+library(tidyverse)
+library(janitor)
+library(zoo)
+\end{verbatim}
+
+    \item \textbf{Import and clean the dataset:}
+\begin{verbatim}
+femalelabor <- read.csv("Femalelabor.csv", skip=4, stringsAsFactors=FALSE)
+femalelabor <- femalelabor %>% clean_names()
+\end{verbatim}
+
+    \item \textbf{Filter for Afghanistan and remove unnecessary columns:}
+\begin{verbatim}
+afgfemale <- femalelabor %>% filter(country_name == "Afghanistan")
+afgfemale <- afgfemale %>% select(-x)
+\end{verbatim}
+
+    \item \textbf{Identify year columns:}
+\begin{verbatim}
+yearcol <- colnames(afgfemale)[5:ncol(afgfemale)]
+\end{verbatim}
+
+    \item \textbf{Convert year columns to numeric and interpolate missing values:}
+\begin{verbatim}
+afgfemale[yearcol] <- lapply(afgfemale[yearcol], function(x) as.numeric(x))
+afgfemale[yearcol] <- lapply(afgfemale[yearcol], function(x) na.approx(x, na.rm=FALSE))
+\end{verbatim}
+
+    \item \textbf{Reshape data to long format:}
+\begin{verbatim}
+afgfemale1 <- afgfemale %>%
+  pivot_longer(cols = all_of(yearcol),
+               names_to = "year",
+               values_to = "female_labor_participation") %>%
+  mutate(year = as.integer(str_remove(year, "x"))) %>%
+  arrange(year)
+glimpse(afgfemale1)
+\end{verbatim}
+
+    \item \textbf{Filter out remaining missing values:}
+\begin{verbatim}
+afgfemale2 <- afgfemale1 %>% filter(!is.na(female_labor_participation))
+\end{verbatim}
+
+\end{enumerate}
+
+
+% =========================
+\section*{Part 4: Figures from Analysis}
+
+Below are the figures generated from the R script. Each figure is inserted individually using its corresponding PNG file name.
+
+% ---------- Figure 1 ----------
+\subsection*{Figure 1: Time Series Female Labor Force Participation in Afghanistan (1990-2025)}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{female_labor_time_series.png} 
+    \caption{Time series of female labor force participation in Afghanistan from 1990 to 2025.}
+    \label{fig:figure1}
+\end{figure}
+
+% ---------- Figure 2 ----------
+\subsection*{Figure 2: Key Taliban Periods Highlighted for Female Labor Force Participation in Afghanistan}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{female_labor_highlight_periods.png} 
+    \caption{Female labor force participation with highlighted Taliban periods (1996 and 2021).}
+    \label{fig:figure2}
+\end{figure}
+
+% ---------- Figure 3 ----------
+\subsection*{Figure 3: Yearly Changes in Female Labor Force Participation in Afghanistan(1990-2025)}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{female_labor_change.png}
+    \caption{Year-to-Year changes in female labor force participation in Afghanistan.}
+    \label{fig:figure3}
+\end{figure}
+
+\section*{Part 5: Explanation of what the images are communicating. How are they helpful for understanding your data set?}
+
+For the final project, I want to analyze the effect of restrictions placed on the Afghan female population and their potential impact on the country's GDP. I use Female Labor Force Participation as a proxy for the level of restrictions on women’s economic activity. The figures plot the Female Labor Force Participation Rate on the y-axis against years on the x-axis.
+
+In Figure 1, the time series visualization shows the overall trend in female labor force participation from 1990 to 2025. This figure is useful for identifying long-term patterns, such as the noticeable increase after 2001 and the sharp decline after 2021. These changes suggest that political and institutional shifts may have had significant effects on women’s participation in the labor market.
+
+In Figure 2, key periods of Taliban rule are highlighted, specifically the initial regime beginning in 1996 and their return to power in 2021. This visualization helps isolate and emphasize how female labor force participation behaves during these politically significant periods. It allows for clearer comparison of trends before, during, and after these events.
+
+In Figure 3, a bar plot of year-to-year changes in female labor force participation is presented. This figure highlights the magnitude and direction of annual changes, making it easier to observe periods of rapid increase or decline. It is particularly useful for identifying short-term fluctuations and volatility in the data.
+
+Overall, these figures complement each other by providing insights into long-term trends, key political periods, and short-term changes, which together improve understanding of how restrictions on women may influence economic outcomes.
+\end{document}
