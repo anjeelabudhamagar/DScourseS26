@@ -1,0 +1,97 @@
+% Fonts/languages
+\documentclass[12pt,english]{exam}
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage{babel}
+\usepackage{mathpazo}
+%\usepackage{mathptmx}
+% Colors: see  http://www.math.umbc.edu/~rouben/beamer/quickstart-Z-H-25.html
+\usepackage{color}
+\usepackage[dvipsnames]{xcolor}
+\definecolor{byublue}     {RGB}{0.  ,30. ,76. }
+\definecolor{deepred}     {RGB}{190.,0.  ,0.  }
+\definecolor{deeperred}   {RGB}{160.,0.  ,0.  }
+\definecolor{lightlightgray}{RGB}{220, 220, 220}
+\newcommand{\textblue}[1]{\textcolor{byublue}{#1}}
+\newcommand{\textred}[1]{\textcolor{deeperred}{#1}}
+% Layout
+\usepackage{setspace} %singlespacing; onehalfspacing; doublespacing; setstretch{1.1}
+\setstretch{1.2}
+\usepackage[verbose,nomarginpar,margin=1in]{geometry} % Margins
+\setlength{\headheight}{15pt} % Sufficent room for headers
+\usepackage[bottom]{footmisc} % Forces footnotes on bottom
+% Headers/Footers
+\setlength{\headheight}{15pt}	
+%\usepackage{fancyhdr}
+%\pagestyle{fancy}
+%\lhead{For-Profit Notes} \chead{} \rhead{\thepage}
+%\lfoot{} \cfoot{} \rfoot{}
+% Useful Packages
+%\usepackage{bookmark} % For speedier bookmarks
+\usepackage{amsthm}   % For detailed theorems
+\usepackage{amssymb}  % For fancy math symbols
+\usepackage{amsmath}  % For awesome equations/equation arrays
+\usepackage{array}    % For tubular tables
+\usepackage{longtable}% For long tables
+\usepackage[flushleft]{threeparttable} % For three-part tables
+\usepackage{multicol} % For multi-column cells
+\usepackage{graphicx} % For shiny pictures
+\usepackage{subfig}   % For sub-shiny pictures
+\usepackage{enumerate}% For cusomtizable lists
+\usepackage{pstricks,pst-node,pst-tree,pst-plot} % For trees
+% Bib
+\usepackage[authoryear]{natbib} % Bibliography
+\usepackage{url}                % Allows urls in bib
+% TOC
+\setcounter{tocdepth}{4}
+% Links
+\usepackage{hyperref}    % Always add hyperref (almost) last
+\hypersetup{colorlinks,breaklinks,citecolor=black,filecolor=black,linkcolor=byublue,urlcolor=blue,pdfstartview={FitH}}
+\usepackage[all]{hypcap} % Links point to top of image, builds on hyperref
+\usepackage{breakurl}    % Allows urls to wrap, including hyperref
+\pagestyle{head}
+\firstpageheader{\textbf{\class\ - \term}}{\textbf{\examnum}}{\textbf{Due: Jan. 29\\ beginning of class}}
+\runningheader{\textbf{\class\ - \term}}{\textbf{\examnum}}{\textbf{Due: Jan. 29\\ beginning of class}}
+\runningheadrule
+\newcommand{\class}{Econ 5253}
+\newcommand{\term}{Spring 2026}
+\newcommand{\examdate}{Due: January 29, 2026}
+% \newcommand{\timelimit}{30 Minutes}
+\noprintanswers                         % Uncomment for no solutions version
+\newcommand{\examnum}{Problem Set 1}           % Uncomment for no solutions version
+% \printanswers                           % Uncomment for solutions version
+% \newcommand{\examnum}{Problem Set 1 - Solutions} % Uncomment for solutions version
+%\lhead{Econ 201 - Summer 2014} \chead{Quiz 1} \rhead{\thepage}
+%\lfoot{} \cfoot{} \rfoot{}
+%\setstretch{1.0}
+\begin{document}
+This problem set will have you apply some of the productivity-enhancing software you've been introduced to, and help me learn a bit more about your research interests.
+In completing this assignment you will be writing TeX code, using \url{overleaf.com} to edit the TeX code, using Git, and publishing your work to GitHub.
+You will submit your problem set by pushing the document to \emph{your} fork of the class repository. You will put this and all other problem sets in the path \texttt{/DScourseS26/ProblemSets/PS\{X\}} where \texttt{\{X\}} denotes the problem set number. Name the file \texttt{PS1\_LastName.pdf}.
+\begin{questions}
+\question Create an account at \url{GitHub.com} and ``star'' our class repository (\url{github.com/tyleransom/DScourseS26}). Please add a photo of yourself to your profile; this will make it easier for all of us to interact throughout the course.
+\question Fork the class repository to your own account. Once you have forked, go to ``Settings'' and click on ``Collaborators'' on the left hand bar. Enter my GitHub username (\texttt{tyleransom}) so that I will be able to view your completed assignments.
+\question Make sure you download other productivity software that we discussed in class: Git, VS Code, and R/Julia/Python/SQL. For Git, you should Git natively (if a Mac OS user) or download and install the Windows Git binary from \href{https://git-scm.com/download/win}{here}. We will be using RStudio as our primary Integrated Development Environment (IDE) throughout the semester. I also recommend installing VS Code, but that is optional. In general, you are free to use whatever tools you would like for this course. However, we will be using my preferred tools for in-class demonstrations.
+\question Create an account at \url{overleaf.com} and open a new project. I recommend starting with an ``Example Project'' to see how LaTeX works, but a ``Blank Project'' is fine too.
+\question In the body of your .tex file, write a brief summary ($\approx$ half a page) of your interests in economics \& data science. What made you want to take this class? Do you have any ideas for what you would want to do for your project for this class? What are your goals for this class, and what is your plan for after graduation? \textit{Feel free to use AI tools to help with LaTeX syntax.}
+\question At the end of your document, create a new section entitled ``Equation'' and write the following equation in \TeX format (see \href{https://www.overleaf.com/learn/latex/mathematical_expressions}{Overleaf's guide to mathematical expressions}):
+\begin{equation}
+	a^{2} + b^{2} = c^{2}
+\end{equation}
+\question Using GitHub.com in your web browser, create a text file with your initials in the \texttt{People/} folder of \emph{the main class repository} (not your fork). The file should contain only the text \texttt{'hello'}. To do this: (1) Navigate to the People/ folder in the class repository, (2) Click ``Add file'' $\rightarrow$ ``Create new file'', (3) Name it with your initials (e.g., \texttt{TR.txt}), (4) Type \texttt{'hello'} in the editor, and (5) At the bottom, select ``Create a new branch'' and click ``Propose new file'' to create the pull request.
+\end{questions}
+
+Note: Steps to submit this problem set:
+\begin{enumerate}[(a)]
+\item In Overleaf, download your .tex and .pdf files (click ``Menu'' in top-left $\rightarrow$ ``Download'' $\rightarrow$ ``Source'')
+\item Rename both files to \texttt{PS1\_LastName.tex} and \texttt{PS1\_LastName.pdf}
+\item In your web browser, navigate to \textbf{\textit{your}} forked repository on GitHub.com
+\item Click on the \texttt{ProblemSets/} folder 
+\item Click on the \texttt{PS1/} folder 
+\item Click ``Add file'' $\rightarrow$ ``Upload files''
+\item Drag and drop (or click to select) both \texttt{PS1\_LastName.tex} and \texttt{PS1\_LastName.pdf}
+\item Scroll down, add a commit message like ``Turning in my PS1'', and click ``Commit changes''
+\end{enumerate}
+
+\end{document}
