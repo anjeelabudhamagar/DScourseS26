@@ -19,7 +19,7 @@ wages <- wages %>%
   )
 
 #Summary Table
-datasummary_skim(wages, output = "latex")
+datasummary_skim(wages, output = "summary_table.tex")
 
 #Missing rate of logwage
 missing_rate<-mean(is.na((wages$logwage)))
