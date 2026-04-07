@@ -1,0 +1,45 @@
+\documentclass{article}
+
+\usepackage{tabularray}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{codehigh}
+\usepackage[normalem]{ulem}
+\UseTblrLibrary{booktabs}
+\UseTblrLibrary{siunitx}
+
+\title{Problem Set 8}
+\author{Anjeela Budha Magar}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\noindent Question 5: How does your estimate compare with the true value of $\beta$ in (1)?
+
+\vspace{0.3cm}
+
+The OLS estimators of $\beta$ are extremely close to the true parameter values used to generate the data.
+
+\vspace{0.5cm}
+
+\noindent Question 7: Do your answers differ?
+
+\vspace{0.3cm}
+
+The estimated values of $\beta$ are virtually the same when using nloptr’s L-BFGS algorithm. However, the estimates obtained using the Nelder-Mead algorithm are slightly further away from the true values compared to the other methods.
+
+\vspace{0.5cm}
+
+\noindent Question 9: In your .tex file, tell me how similar your estimates of $\hat{\beta}$ are to the “ground truth” $\beta$ used to create the data in (1).
+
+\vspace{0.3cm}
+
+The estimated values $\hat{\beta}$ are very close to the “ground truth” $\beta$ used to generate the data in (1).
+
+\vspace{0.5cm}
+
+\input{PS8_ModelSummary.tex}
+
+\end{document}
