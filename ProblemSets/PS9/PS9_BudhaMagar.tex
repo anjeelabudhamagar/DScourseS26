@@ -1,0 +1,52 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+
+\title{Problem Set 9}
+\author{Anjeela Budha Magar}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Question 7}
+
+What is the dimension of your training data (housing\_train)? How many more X variables do you have than in the original housing data?
+
+\textbf{Answer:}
+
+The dimension of the training dataset after preprocessing is $(404, 75)$, where 404 is the number of observations and 75 is the total number of variables including the outcome variable. This implies there are 74 predictor variables.
+
+The original dataset contained 13 predictors. After applying 6th-degree polynomial transformations and interaction terms, the number of predictors increased to 74, which is an increase of 61 variables.
+
+
+\section*{Question 8}
+
+Estimate a LASSO model to predict log median house value, where the penalty parameter $\lambda$ is tuned by 6-fold cross-validation. What is the optimal value of $\lambda$? What is the in-sample RMSE? What is the out-of-sample RMSE?
+
+\textbf{Answer:}
+
+The optimal value of $\lambda$ is 0.00222.
+
+The in-sample RMSE is 0.138. The out-of-sample RMSE for the LASSO model is 0.184.
+
+\section*{Question 9}
+
+Repeat the previous question using ridge regression where the penalty parameter $\lambda$ is tuned using 6-fold cross-validation. What is the optimal value of $\lambda$? What is the out-of-sample RMSE?
+
+\textbf{Answer:}
+
+The optimal value of $\lambda$ is 0.0373.
+
+The out-of-sample RMSE for the ridge regression model is 0.180. 
+
+\section*{Question 10}
+
+Would you be able to estimate a simple linear regression model on a dataset that had more columns than rows? Using the RMSE values of each of the tuned models, comment on where your model stands in terms of the bias-variance tradeoff.
+
+\textbf{Answer:}
+
+Ordinary least squares cannot be uniquely estimated on a dataset that has more columns than rows because the matrix $X'X$ becomes singular and therefore not invertible. In this case, there are infinitely many solutions, and the model is not well-defined without additional restrictions.
+
+Comparing the RMSE values, both the LASSO and ridge models achieve low out-of-sample RMSE (0.184 and 0.180, respectively), indicating good predictive performance. These models use regularization to reduce variance and prevent overfitting in a high-dimensional setting. Ridge regression shrinks coefficients toward zero but keeps all variables, resulting in a slightly lower out-of-sample RMSE (0.180), which suggests lower variance. LASSO, on the other hand, performs variable selection and may introduce slightly more bias but makes the model easier to interpret. Both models manage the bias-variance tradeoff better compared to an OLS model in this high-dimensional setting.
+\end{document}
