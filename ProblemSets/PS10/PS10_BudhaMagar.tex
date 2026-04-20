@@ -1,0 +1,40 @@
+\documentclass[11pt]{article}
+\usepackage{booktabs}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\title{Problem Set 10: Model Comparison}
+\author{Anjeela Budha Magar}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Test Set Performance}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{l c}
+\toprule
+Model & Accuracy \\
+\midrule
+Logistic Regression (LASSO) & 0.853 \\
+Decision Tree & 0.868 \\
+Neural Network & 0.858 \\
+K-Nearest Neighbors & 0.843 \\
+Support Vector Machine (RBF) & 0.860 \\
+\bottomrule
+\end{tabular}
+\caption{Out-of-sample accuracy across classification models}
+\end{table}
+
+\section*{Best Performing Model}
+
+The decision tree model achieved the highest test accuracy (0.868), making it the best-performing model in this comparison. The K-Nearest Neighbors model had the lowest test accuracy (0.843).
+
+The Support Vector Machine (0.860) and Neural Network (0.858) performed very similarly. The Logistic Regression (LASSO) model achieved an accuracy of 0.853, which is slightly lower but still competitive compared to the other models.
+
+Overall, the performance differences across models are relatively small, suggesting that multiple classification methods perform reasonably well on this dataset.
+
+\end{document}
