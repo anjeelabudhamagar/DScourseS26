@@ -1,0 +1,101 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb, geometry}
+\geometry{margin=1in}
+
+\title{Minimum Wage Increases and Their Effects on Prices, Employment, and Business Formation}
+\author{Anjeela Budha Magar}
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+Minimum wage policy remains widely debated in economics and public policy. Proponents argue that wage increases improve household income, reduce poverty, and stimulate local demand. Critics emphasize potential adverse effects on employment, prices, and firm profitability, particularly in low-margin industries such as retail, restaurants, and hospitality.
+
+This paper examines the effects of minimum wage increases in California and New York on three outcomes:
+\begin{itemize}
+    \item Consumer prices in the food-away-from-home sector,
+    \item Employment in restaurants, retail, and hospitality,
+    \item New business formation in affected industries.
+\end{itemize}
+
+I use a difference-in-differences (DiD) framework comparing California and New York to states that maintained minimum wages near the federal floor during the sample period.
+
+\section{Literature Review}
+
+\begin{itemize}
+    \item Card, David, and Alan B. Krueger (1994) \cite{card1994minimum}
+    \item Aaronson, Daniel, Sumit Agarwal, and Eric French (2012) \cite{aaronson2012spending}
+    \item Cengiz, Doruk et al. (2019) \cite{cengiz2019effect}
+    \item Jardim, Katerina et al. (2022) \cite{jardim2022minimum}
+    \item Neumark, David et al. (2014) \cite{neumark2014revisiting}
+\end{itemize}
+
+\section{Data}
+
+This study uses four main data sources:
+
+\begin{itemize}
+ \item \textbf{Quarterly Census of Employment and Wages (QCEW):} County-industry level employment and wage data from the Bureau of Labor Statistics.
+
+ \item \textbf{Consumer Price Index (CPI):} Price indices for food-away-from-home used to measure consumer price changes.
+
+ \item \textbf{Business Dynamics Statistics (BDS):} Establishment births and deaths by state and industry from the Census Bureau.
+
+ \item \textbf{FRED:} Macroeconomic controls for state-level GDP.
+\end{itemize}
+
+\section{Empirical Strategy}
+
+\subsection{Baseline Difference-in-Differences Model}
+
+\[
+Y_{ist} = \alpha + \beta (Treat_s \times Post_t) + \gamma_s + \delta_t + X'_{st}\theta + \epsilon_{ist}
+\]
+
+where $Y_{ist}$ denotes the outcome variable (log employment, log prices, or log establishment births) in industry $i$, state $s$, and year $t$. $Treat_s$ identifies California and New York, while $Post_t$ indicates periods following minimum wage increases. $\gamma_s$ and $\delta_t$ represent state and year fixed effects, and $X_{st}$ includes controls such as unemployment rate, log population, and log state GDP.
+
+Standard errors are clustered at the state level to account for serial correlation within states over time.
+
+\subsection{State-Specific Treatment Effects}
+
+To allow for heterogeneous responses across states, I estimate separate models for California and New York.
+
+\subsubsection{California Model}
+
+\[
+Y^{CA}_{ist} = \alpha^{CA} + \beta^{CA}(CA_s \times Post^{CA}_t) + \gamma_s + \delta_t + X'_{st}\theta + \epsilon_{ist}
+\]
+
+\subsubsection{New York Model}
+
+\[
+Y^{NY}_{ist} = \alpha^{NY} + \beta^{NY}(NY_s \times Post^{NY}_t) + \gamma_s + \delta_t + X'_{st}\theta + \epsilon_{ist}
+\]
+
+These specifications allow treatment effects to vary across states rather than imposing a homogeneous effect.
+
+\section{Results}
+
+Based on prior literature, I anticipate heterogeneous effects across industries. Employment in retail trade is expected to exhibit the largest negative response to minimum wage increases, while restaurants and accommodation services may show smaller or negligible effects.
+
+Consumer prices in the food-away-from-home sector are expected to increase modestly following minimum wage increases, reflecting partial pass-through of labor costs to consumers.
+
+Finally, new business formation may decline in affected industries if higher labor costs increase entry barriers, particularly for small firms operating on thin margins.
+
+These hypotheses will be tested using the empirical strategy described above.
+
+\section{Conclusion}
+
+This paper examines the effects of minimum wage increases in California and New York on prices, employment, and business formation in low-wage industries. While theory predicts both positive income effects and potential labor market distortions, the net empirical effects remain an open question.
+
+Key limitations include potential violations of the parallel trends assumption, staggered treatment timing across states, and possible spillover effects across state borders.
+
+\nocite{*}
+
+\bibliographystyle{apalike}
+\bibliography{PS11_BudhaMagar}
+
+\end{document}
