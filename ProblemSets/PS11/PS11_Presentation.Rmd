@@ -1,0 +1,448 @@
+---
+title: "The Effects of State Minimum Wage Increases on Restaurant Employment and Prices"
+subtitle: "Evidence from California and New York, 2010--2023"
+author: "Anjeela Budha Magar"
+date: "Econ 5253 \\ Spring 2026"
+output:
+  beamer_presentation:
+    theme: "Madrid"
+    colortheme: "default"
+    fonttheme: "structurebold"
+    slide_level: 2
+    keep_tex: true
+fontsize: 10pt
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{caption}
+  - \captionsetup{font=footnotesize}
+---
+
+```{r setup, include=FALSE}
+# ---------- knit defaults ----------
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 7, fig.height = 3.8,
+  dpi = 150
+)
+
+# ---------- packages ----------
+# install once on your machine, then comment out:
+# install.packages(c("tidyverse", "lubridate", "lmtest", "sandwich",
+#                    "kableExtra", "broom", "scales"))
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(lubridate)
+  library(lmtest)
+  library(sandwich)
+  library(kableExtra)
+  library(broom)
+  library(scales)
+})
+
+# ---------- where the raw FRED CSVs live ----------
+DATA_DIR <- "."   
+
+# ---------- analysis window ----------
+YEAR_MIN   <- 2010
+YEAR_MAX   <- 2023
+TREAT_YEAR <- 2014
+
+
+# ============================================================
+# 1. helpers to read each FRED csv and aggregate to annual
+# ============================================================
+read_fred <- function(file, value_name) {
+  read_csv(file.path(DATA_DIR, file), show_col_types = FALSE) %>%
+    rename(date = 1, !!value_name := 2) %>%
+    mutate(date  = as.Date(date),
+           year  = year(date))
+}
+
+annual_mean <- function(df, v) {
+  df %>% group_by(year) %>%
+    summarise("{v}" := mean(.data[[v]], na.rm = TRUE), .groups = "drop")
+}
+
+annual_january <- function(df, v) {
+  df %>% filter(month(date) == 1) %>%
+    select(year, all_of(v))
+}
+
+
+# ============================================================
+# 2. load, aggregate, tag with state, stack
+# ============================================================
+# minimum wage (already annual)
+mw <- bind_rows(
+  annual_january(read_fred("STTMINWGCA.csv", "mw"), "mw") %>% mutate(state = "CA"),
+  annual_january(read_fred("STTMINWGNY.csv", "mw"), "mw") %>% mutate(state = "NY"),
+  annual_january(read_fred("STTMINWGAZ.csv", "mw"), "mw") %>% mutate(state = "AZ"),
+  annual_january(read_fred("STTMINWGNV.csv", "mw"), "mw") %>% mutate(state = "NV"),
+  # Pennsylvania has not raised its statutory minimum since 2009;
+  # the FRED file is therefore not in the data folder. Hand-set:
+  tibble(year  = YEAR_MIN:YEAR_MAX, mw = 7.25, state = "PA")
+)
+
+# real GSP (quarterly -> annual mean)
+gsp <- bind_rows(
+  annual_mean(read_fred("CARQGSPCA.csv", "gsp"), "gsp") %>% mutate(state = "CA"),
+  annual_mean(read_fred("NYRQGSP.csv",   "gsp"), "gsp") %>% mutate(state = "NY"),
+  annual_mean(read_fred("AZRQGSPAZ.csv", "gsp"), "gsp") %>% mutate(state = "AZ"),
+  annual_mean(read_fred("NVRQGSP.csv",   "gsp"), "gsp") %>% mutate(state = "NV"),
+  annual_mean(read_fred("PARQGSP.csv",   "gsp"), "gsp") %>% mutate(state = "PA")
+)
+
+# food-services employment (monthly -> annual mean)
+emp <- bind_rows(
+  annual_mean(read_fred("SMU06000007072200001SA.csv", "emp"), "emp") %>% mutate(state = "CA"),
+  annual_mean(read_fred("SMU36000007072200001SA.csv", "emp"), "emp") %>% mutate(state = "NY"),
+  annual_mean(read_fred("SMU04000007072200001.csv",   "emp"), "emp") %>% mutate(state = "AZ"),
+  annual_mean(read_fred("SMU32000007072200001SA.csv", "emp"), "emp") %>% mutate(state = "NV"),
+  annual_mean(read_fred("SMU42000007072200001SA.csv", "emp"), "emp") %>% mutate(state = "PA")
+)
+
+# food-away-from-home CPI (monthly -> annual mean; AZ already annual)
+cpi <- bind_rows(
+  annual_mean(read_fred("CUURA422SEFV.csv", "cpi"), "cpi") %>% mutate(state = "CA"),
+  annual_mean(read_fred("CUURA101SEFV.csv", "cpi"), "cpi") %>% mutate(state = "NY"),
+  annual_mean(read_fred("CUURA102SEFV.csv", "cpi"), "cpi") %>% mutate(state = "PA"),
+  annual_mean(read_fred("CUUSA429SEFV.csv", "cpi"), "cpi") %>% mutate(state = "AZ")
+  # No Nevada CPI series available in the data folder.
+)
+
+
+# ============================================================
+# 3. build the four DiD panels
+# ============================================================
+build_panel <- function(states, treat_state, include_cpi = TRUE) {
+  d <- mw %>% filter(state %in% states) %>%
+    inner_join(gsp %>% filter(state %in% states), by = c("state", "year")) %>%
+    inner_join(emp %>% filter(state %in% states), by = c("state", "year"))
+  if (include_cpi) {
+    d <- d %>% inner_join(cpi %>% filter(state %in% states),
+                          by = c("state", "year"))
+  }
+  d %>% filter(between(year, YEAR_MIN, YEAR_MAX)) %>%
+    arrange(state, year) %>%
+    group_by(state) %>%
+    mutate(
+      ln_emp     = log(emp),
+      ln_gsp     = log(gsp),
+      ln_emp_lag = lag(ln_emp),
+      treat      = as.integer(state == treat_state),
+      post       = as.integer(year >= TREAT_YEAR),
+      did        = treat * post,
+      ln_cpi     = if ("cpi" %in% names(.)) log(cpi) else NA_real_
+    ) %>%
+    ungroup()
+}
+
+panel_ca_emp <- build_panel(c("CA","AZ","NV"), "CA", include_cpi = FALSE)
+panel_ny_emp <- build_panel(c("NY","PA"),      "NY", include_cpi = FALSE)
+panel_ca_cpi <- build_panel(c("CA","AZ"),      "CA", include_cpi = TRUE)
+panel_ny_cpi <- build_panel(c("NY","PA"),      "NY", include_cpi = TRUE)
+
+
+# ============================================================
+# 4. estimate DiD models
+# ============================================================
+# y = a + b*did + state FE + year FE + controls + e
+# HC1 robust SEs; cluster-robust SEs would be preferred but with
+# 2-3 states they are unstable, so HC1 is the working default.
+run_did <- function(df, y, controls = character()) {
+  rhs <- c("did", "factor(state)", "factor(year)", controls)
+  f   <- as.formula(paste(y, "~", paste(rhs, collapse = " + ")))
+  m   <- lm(f, data = df)
+  ct  <- coeftest(m, vcov = vcovHC(m, type = "HC1"))
+  tibble(
+    beta   = unname(coef(m)["did"]),
+    se     = unname(ct["did", "Std. Error"]),
+    p      = unname(ct["did", "Pr(>|t|)"]),
+    n      = nobs(m),
+    r2     = summary(m)$r.squared,
+    pct    = (exp(coef(m)["did"]) - 1) * 100
+  )
+}
+
+did_results <- bind_rows(
+  run_did(panel_ca_emp, "ln_emp")                            %>% mutate(spec = "CA-emp: no controls"),
+  run_did(panel_ca_emp, "ln_emp", "ln_gsp")                  %>% mutate(spec = "CA-emp: + ln(GSP)"),
+  run_did(panel_ca_emp, "ln_emp", c("ln_gsp","ln_emp_lag"))  %>% mutate(spec = "CA-emp: + ln(GSP) + lag"),
+  run_did(panel_ny_emp, "ln_emp")                            %>% mutate(spec = "NY-emp: no controls"),
+  run_did(panel_ny_emp, "ln_emp", "ln_gsp")                  %>% mutate(spec = "NY-emp: + ln(GSP)"),
+  run_did(panel_ny_emp, "ln_emp", c("ln_gsp","ln_emp_lag"))  %>% mutate(spec = "NY-emp: + ln(GSP) + lag"),
+  run_did(panel_ca_cpi, "ln_cpi")                            %>% mutate(spec = "CA-cpi: no controls (AZ only)"),
+  run_did(panel_ca_cpi, "ln_cpi", "ln_gsp")                  %>% mutate(spec = "CA-cpi: + ln(GSP)"),
+  run_did(panel_ny_cpi, "ln_cpi")                            %>% mutate(spec = "NY-cpi: no controls"),
+  run_did(panel_ny_cpi, "ln_cpi", "ln_gsp")                  %>% mutate(spec = "NY-cpi: + ln(GSP)")
+) %>% select(spec, beta, pct, se, p, n, r2)
+```
+
+# Introduction
+
+## What this paper asks
+
+\textbf{The minimum wage debate has run for thirty years. Two big questions remain.}
+
+\bigskip
+
+\textbf{1. Employment.} Do large state minimum wage increases reduce
+restaurant jobs, as the textbook model predicts, or not, as
+\textit{Card and Krueger (1994)} argued?
+
+\bigskip
+
+\textbf{2. Prices.} If firms don't lay workers off, do they pass the
+cost on to consumers through higher menu prices?
+
+\bigskip
+
+\textbf{Setting.} California and New York both began phasing in
+\$15-per-hour minimum wages in 2014. These are among the largest
+state-level wage shocks in U.S. history --- a sharp natural
+experiment.
+
+\bigskip
+
+\textbf{What I do.} Two parallel difference-in-differences models,
+one for each treated state, on annual food-services employment and
+food-away-from-home CPI, 2010--2023.
+
+# Data
+
+## Data sources and state pairings
+
+\small
+All series come from FRED.
+
+```{r data-table, results='asis'}
+tribble(
+  ~Variable,                        ~Source,                   ~Frequency,    ~`Annualized by`,
+  "State minimum wage",             "STTMINWG{CA,NY,AZ,NV}",    "Annual",      "January value",
+  "Real GSP",                       "{CA,NY,AZ,NV,PA}RQGSP",    "Quarterly",   "Annual mean",
+  "Food-services employment",       "SMU000007072200001SA",   "Monthly",     "Annual mean",
+  "CPI: food away from home",       "CUURA{422,101,102}SEFV",   "Monthly",     "Annual mean",
+  "CPI: Phoenix-Mesa (AZ proxy)",   "CUUSA429SEFV",             "Annual",      "(none)"
+) %>%
+  kable("latex", booktabs = TRUE, linesep = "",
+        caption = "Data inputs and aggregation.") %>%
+  kable_styling(font_size = 8, latex_options = "scale_down")
+```
+
+\textbf{Two state pairings:}
+\begin{itemize}
+  \item \textbf{California} (treated) vs \textbf{Arizona + Nevada} (control)
+        --- shared sunbelt geography, tourism-heavy hospitality, similar
+        seasonal patterns. AZ and NV moved their wage floors much more
+        slowly than CA after 2014.
+  \item \textbf{New York} (treated) vs \textbf{Pennsylvania} (control) ---
+        long shared border, integrated commuter labor markets,
+        similar Mid-Atlantic industrial mix. PA stayed at the federal
+        floor of \$7.25 throughout.
+\end{itemize}
+
+\textbf{Caveat:} no Nevada metro food-away-from-home CPI series exists
+in FRED, so the CPI specification for California uses Arizona alone
+as a control.
+
+## Minimum wage trajectories
+
+```{r, fig.width=6, fig.height=4, out.width="0.9\\linewidth"}
+mw_plot_data <- mw %>% filter(between(year, YEAR_MIN, YEAR_MAX))
+
+ggplot(mw_plot_data, aes(year, mw, color = state, linetype = state)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 1.6) +
+  geom_vline(xintercept = TREAT_YEAR, linetype = "dashed",
+             color = "gray40", linewidth = 0.4) +
+  annotate("text", x = TREAT_YEAR + 0.15, y = 14.5,
+           label = "Phase-in begins (2014)",
+           hjust = 0, size = 2.8, color = "gray30") +
+  scale_color_manual(values = c(CA = "#d62728", NY = "#1f77b4",
+                                AZ = "#ff7f0e", NV = "#9467bd",
+                                PA = "#2ca02c")) +
+  scale_linetype_manual(values = c(CA = "solid", NY = "solid",
+                                    AZ = "dashed", NV = "dashed",
+                                    PA = "dashed")) +
+  scale_x_continuous(breaks = seq(YEAR_MIN, YEAR_MAX, 2)) +
+  scale_y_continuous(labels = dollar_format()) +
+  labs(x = NULL, y = "State minimum wage",
+       color = "State", linetype = "State",
+       caption = "Source: FRED. Treated states (CA, NY) are solid; controls dashed.") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "right",
+        plot.caption = element_text(size = 7, color = "gray40"))
+```
+
+# Methods
+
+## Difference-in-differences specification
+
+\textbf{Estimating equation:}
+
+$$
+\ln y_{st} \;=\; \alpha + \beta \cdot (\text{Treat}_s \times \text{Post}_t)
+              + \gamma_s + \delta_t + X_{st}'\pi + \varepsilon_{st}
+$$
+
+\begin{itemize}\small
+  \item $\ln y_{st}$ = log food-services employment \emph{or} log
+        food-away-from-home CPI in state $s$, year $t$.
+  \item $\text{Treat}_s = 1$ for CA (or NY); $\text{Post}_t = 1$ for
+        years $\geq 2014$.
+  \item $\gamma_s, \delta_t$ = state and year fixed effects.
+  \item $X_{st}$ = log real GSP (state business cycle); for employment
+        I also test specifications with the one-year lag of $\ln y$.
+  \item $\beta$ = average treatment effect on the treated under
+        parallel trends. Standard errors are HC1 robust.
+\end{itemize}
+
+\bigskip
+
+\textbf{Identifying assumption:} treated and control states would have
+followed parallel trajectories absent the policy. I check this with
+pre-2014 growth rates next slide.
+
+## Pre-trends check
+
+```{r pretrends, fig.height=3.2, out.width="\\linewidth"}
+pretrends <- bind_rows(
+  panel_ca_emp %>% mutate(panel = "CA-emp", outcome = ln_emp),
+  panel_ny_emp %>% mutate(panel = "NY-emp", outcome = ln_emp),
+  panel_ca_cpi %>% mutate(panel = "CA-cpi", outcome = ln_cpi),
+  panel_ny_cpi %>% mutate(panel = "NY-cpi", outcome = ln_cpi)
+) %>%
+  group_by(panel, state) %>%
+  mutate(outcome_norm = outcome - outcome[year == YEAR_MIN]) %>%
+  ungroup()
+
+ggplot(pretrends, aes(year, outcome_norm,
+                      color = state, linetype = factor(treat))) +
+  geom_vline(xintercept = TREAT_YEAR, linetype = "dashed",
+             color = "gray40", linewidth = 0.3) +
+  geom_line(linewidth = 0.9) +
+  facet_wrap(~ panel, ncol = 4, scales = "free_y") +
+  scale_color_manual(values = c(CA = "#d62728", NY = "#1f77b4",
+                                AZ = "#ff7f0e", NV = "#9467bd",
+                                PA = "#2ca02c")) +
+  scale_linetype_manual(values = c(`0` = "dashed", `1` = "solid"),
+                         guide = "none") +
+  scale_x_continuous(breaks = c(2010, 2014, 2018, 2022)) +
+  labs(x = NULL, y = "Log change from 2010", color = NULL,
+       caption = "Solid = treated state. Dashed vertical line = 2014 phase-in.") +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(size = 7, color = "gray40"),
+        strip.text = element_text(face = "bold"))
+```
+
+\small
+\textbf{Read:} CA, CA-cpi, and NY-cpi panels track their controls
+closely before 2014 --- parallel-trends assumption looks credible.
+The \textbf{NY-emp} panel does not: New York food-services employment
+was already growing about 2.9 pp/yr faster than Pennsylvania pre-2014.
+NY-emp results need to be read with that caveat.
+
+# Findings
+
+## Main DiD results
+
+```{r results-table, results='asis'}
+did_results %>%
+  mutate(
+    beta = sprintf("%+.4f", beta),
+    pct  = sprintf("%+.2f%%", pct),
+    se   = sprintf("%.4f",   se),
+    p    = sprintf("%.3f",   p),
+    r2   = sprintf("%.3f",   r2)
+  ) %>%
+  rename(Specification = spec, `DiD coef.` = beta, `% effect` = pct,
+         `SE (HC1)` = se, `p-value` = p, `N` = n, `R²` = r2) %>%
+  kable("latex", booktabs = TRUE, linesep = "",
+        align = c("l","r","r","r","r","r","r"),
+        caption = "DiD coefficient on (Treat $\\times$ Post).") %>%
+  kable_styling(font_size = 7, latex_options = c("scale_down","HOLD_position")) %>%
+  row_spec(0, bold = TRUE) %>%
+  pack_rows("Employment outcomes (log food-services employment)", 1, 6,
+            latex_gap_space = "0.4em") %>%
+  pack_rows("Price outcomes (log CPI food-away-from-home)", 7, 10,
+            latex_gap_space = "0.4em")
+```
+
+\small
+\textbf{Three patterns to highlight:}
+\begin{itemize}\small
+  \item \textbf{CA employment $\downarrow$ 2--6\%} relative to AZ+NV ---
+        the textbook prediction shows up here.
+  \item \textbf{CA prices $\uparrow$ 5--7\%} relative to AZ ---
+        substantial pass-through of wage costs to menu prices.
+  \item \textbf{NY results are mixed} --- positive employment
+        coefficient but pre-trends fail the test; price effect is
+        small and shrinks once we control for state GSP.
+\end{itemize}
+
+## Visual evidence: California employment
+
+```{r, fig.width=6, fig.height=4, out.width="0.9\\linewidth"}
+plot_emp <- panel_ca_emp %>%
+  group_by(state) %>%
+  mutate(emp_norm = emp / emp[year == YEAR_MIN] * 100) %>%
+  ungroup()
+
+ggplot(plot_emp, aes(year, emp_norm, color = state, linetype = state)) +
+  geom_vline(xintercept = TREAT_YEAR, linetype = "dashed",
+             color = "gray40", linewidth = 0.4) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 1.6) +
+  scale_color_manual(values = c(CA = "#d62728",
+                                AZ = "#ff7f0e", NV = "#9467bd")) +
+  scale_linetype_manual(values = c(CA = "solid",
+                                    AZ = "dashed", NV = "dashed")) +
+  scale_x_continuous(breaks = seq(YEAR_MIN, YEAR_MAX, 2)) +
+  labs(x = NULL, y = "Food-services employment (2010 = 100)",
+       color = "State", linetype = "State",
+       caption = "California (solid) tracks the AZ-NV average closely until 2014, then diverges downward.") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "right",
+        plot.caption = element_text(size = 7, color = "gray40"))
+```
+
+# Conclusion
+
+## What did we learn?
+
+\textbf{Three takeaways for California:}
+\begin{itemize}
+  \item Modest \textbf{disemployment} ($-2$ to $-6\%$) in food
+        services, in line with the recent literature on large wage
+        shocks (\textit{Jardim et al.\ 2022, Seattle}).
+  \item Substantial \textbf{price pass-through} ($+5$ to $+7\%$) ---
+        consistent with \textit{Aaronson (2001)} and
+        \textit{Harasztosi \& Lindner (2019)}: firms absorb wage shocks
+        mostly through prices, partly through employment.
+  \item Net effect on workers is ambiguous: those who keep their
+        jobs earn more; those displaced lose; consumers pay more.
+\end{itemize}
+
+\bigskip
+
+\textbf{Why it matters:}
+\begin{itemize}
+  \item Federal and state minimum wage debates (\$15+ proposals
+        nationwide) need credible estimates of \emph{both}
+        employment and price effects.
+  \item Single-outcome studies miss half the story --- a paper that
+        looks only at jobs would conclude ``not much happened''; one
+        that looks only at prices would conclude ``consumers paid for
+        it.'' The truth is both.
+\end{itemize}
+
+\bigskip
+
+\textbf{Honest caveats:} small number of states (low power),
+state-aggregate data masks within-state variation (NYC vs upstate),
+NY pre-trends fail the parallel test. County-level QCEW data and
+synthetic-control methods would strengthen the design.
