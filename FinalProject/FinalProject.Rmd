@@ -1,0 +1,412 @@
+---
+title: "The Effects of State Minimum Wage Increases on Restaurant Employment and Prices"
+subtitle: "Evidence from California and New York, 2010--2023"
+author: "Anjeela Budha Magar"
+date: "Econ 5253 \\ Spring 2026"
+output:
+ pdf_document:
+    keep_tex: true
+fontsize: 12pt
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{caption}
+  - \captionsetup{font=footnotesize}
+  - \usepackage{setspace}
+  - \doublespacing
+---
+
+```{r setup, include=FALSE}
+# ---------- knit defaults ----------
+knitr::opts_chunk$set(
+  echo    = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 7, fig.height = 3.8,
+  dpi = 150
+)
+
+# ---------- packages ----------
+# install once on your machine, then comment out:
+# install.packages(c("tidyverse", "lubridate", "lmtest", "sandwich",
+#                    "kableExtra", "broom", "scales"))
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(lubridate)
+  library(lmtest)
+  library(sandwich)
+  library(kableExtra)
+  library(broom)
+  library(scales)
+  library(fixest)
+})
+
+# ---------- where the raw FRED CSVs live ----------
+DATA_DIR <- "."   
+
+# ---------- analysis window ----------
+YEAR_MIN   <- 2010
+YEAR_MAX   <- 2023
+TREAT_YEAR <- 2014
+
+
+# ============================================================
+# 1. helpers to read each FRED csv and aggregate to annual
+# ============================================================
+read_fred <- function(file, value_name) {
+  read_csv(file.path(DATA_DIR, file), show_col_types = FALSE) %>%
+    rename(date = 1, !!value_name := 2) %>%
+    mutate(date  = as.Date(date),
+           year  = year(date))
+}
+
+annual_mean <- function(df, v) {
+  df %>% group_by(year) %>%
+    summarise("{v}" := mean(.data[[v]], na.rm = TRUE), .groups = "drop")
+}
+
+annual_january <- function(df, v) {
+  df %>% filter(month(date) == 1) %>%
+    select(year, all_of(v))
+}
+
+
+# ============================================================
+# 2. load, aggregate, tag with state, stack
+# ============================================================
+# minimum wage (already annual)
+mw <- bind_rows(
+  annual_january(read_fred("STTMINWGCA.csv", "mw"), "mw") %>% mutate(state = "CA"),
+  annual_january(read_fred("STTMINWGNY.csv", "mw"), "mw") %>% mutate(state = "NY"),
+  annual_january(read_fred("STTMINWGAZ.csv", "mw"), "mw") %>% mutate(state = "AZ"),
+  annual_january(read_fred("STTMINWGNV.csv", "mw"), "mw") %>% mutate(state = "NV"),
+  # Pennsylvania has not raised its statutory minimum since 2009;
+  # the FRED file is therefore not in the data folder. Hand-set:
+  tibble(year  = YEAR_MIN:YEAR_MAX, mw = 7.25, state = "PA")
+)
+
+# real GSP (quarterly -> annual mean)
+gsp <- bind_rows(
+  annual_mean(read_fred("CARQGSPCA.csv", "gsp"), "gsp") %>% mutate(state = "CA"),
+  annual_mean(read_fred("NYRQGSP.csv",   "gsp"), "gsp") %>% mutate(state = "NY"),
+  annual_mean(read_fred("AZRQGSPAZ.csv", "gsp"), "gsp") %>% mutate(state = "AZ"),
+  annual_mean(read_fred("NVRQGSP.csv",   "gsp"), "gsp") %>% mutate(state = "NV"),
+  annual_mean(read_fred("PARQGSP.csv",   "gsp"), "gsp") %>% mutate(state = "PA")
+)
+
+# food-services employment (monthly -> annual mean)
+emp <- bind_rows(
+  annual_mean(read_fred("SMU06000007072200001SA.csv", "emp"), "emp") %>% mutate(state = "CA"),
+  annual_mean(read_fred("SMU36000007072200001SA.csv", "emp"), "emp") %>% mutate(state = "NY"),
+  annual_mean(read_fred("SMU04000007072200001.csv",   "emp"), "emp") %>% mutate(state = "AZ"),
+  annual_mean(read_fred("SMU32000007072200001SA.csv", "emp"), "emp") %>% mutate(state = "NV"),
+  annual_mean(read_fred("SMU42000007072200001SA.csv", "emp"), "emp") %>% mutate(state = "PA")
+)
+
+# food-away-from-home CPI (monthly -> annual mean; AZ already annual)
+cpi <- bind_rows(
+  annual_mean(read_fred("CUURA422SEFV.csv", "cpi"), "cpi") %>% mutate(state = "CA"),
+  annual_mean(read_fred("CUURA101SEFV.csv", "cpi"), "cpi") %>% mutate(state = "NY"),
+  annual_mean(read_fred("CUURA102SEFV.csv", "cpi"), "cpi") %>% mutate(state = "PA"),
+  annual_mean(read_fred("CUUSA429SEFV.csv", "cpi"), "cpi") %>% mutate(state = "AZ")
+  # No Nevada CPI series available in the data folder.
+)
+
+
+# ============================================================
+# 3. build the four DiD panels
+# ============================================================
+build_panel <- function(states, treat_state, include_cpi = TRUE) {
+  d <- mw %>% filter(state %in% states) %>%
+    inner_join(gsp %>% filter(state %in% states), by = c("state", "year")) %>%
+    inner_join(emp %>% filter(state %in% states), by = c("state", "year"))
+  if (include_cpi) {
+    d <- d %>% inner_join(cpi %>% filter(state %in% states),
+                          by = c("state", "year"))
+  }
+  d %>% filter(between(year, YEAR_MIN, YEAR_MAX)) %>%
+    arrange(state, year) %>%
+    group_by(state) %>%
+    mutate(
+      ln_emp     = log(emp),
+      ln_gsp     = log(gsp),
+      ln_emp_lag = lag(ln_emp),
+      treat      = as.integer(state == treat_state),
+      post       = as.integer(year >= TREAT_YEAR),
+      did        = treat * post,
+      ln_cpi     = if ("cpi" %in% names(.)) log(cpi) else NA_real_
+    ) %>%
+    ungroup()
+}
+
+panel_ca_emp <- build_panel(c("CA","AZ","NV"), "CA", include_cpi = FALSE)
+panel_ny_emp <- build_panel(c("NY","PA"),      "NY", include_cpi = FALSE)
+panel_ca_cpi <- build_panel(c("CA","AZ"),      "CA", include_cpi = TRUE)
+panel_ny_cpi <- build_panel(c("NY","PA"),      "NY", include_cpi = TRUE)
+
+
+# ============================================================
+# 4. estimate DiD models
+# ============================================================
+# y = a + b*did + state FE + year FE + controls + e
+# HC1 robust SEs; cluster-robust SEs would be preferred but with
+# 2-3 states they are unstable, so HC1 is the working default.
+run_did <- function(df, y, controls = character()) {
+  # Within estimator: state and year FE absorbed; reports within-R²
+  rhs_main <- c("did", controls)
+  f <- as.formula(
+    paste(y, "~", paste(rhs_main, collapse = " + "), "| state + year")
+  )
+  m <- feols(f, data = df, vcov = "HC1")
+  
+  tibble(
+    beta = unname(coef(m)["did"]),
+    se   = unname(se(m)["did"]),
+    p    = unname(pvalue(m)["did"]),
+    n    = nobs(m),
+    r2   = fitstat(m, "wr2", simplify = TRUE),   # within-R²
+    pct  = (exp(coef(m)["did"]) - 1) * 100
+  )
+}
+
+
+did_results <- bind_rows(
+  run_did(panel_ca_emp, "ln_emp")                  %>% mutate(spec = "CA-emp: baseline"),
+  run_did(panel_ca_emp, "ln_emp", "ln_emp_lag")    %>% mutate(spec = "CA-emp: + lag DV"),
+  run_did(panel_ny_emp, "ln_emp")                  %>% mutate(spec = "NY-emp: baseline"),
+  run_did(panel_ny_emp, "ln_emp", "ln_emp_lag")    %>% mutate(spec = "NY-emp: + lag DV"),
+  run_did(panel_ca_cpi, "ln_cpi")                  %>% mutate(spec = "CA-cpi: baseline (AZ only)"),
+  run_did(panel_ny_cpi, "ln_cpi")                  %>% mutate(spec = "NY-cpi: baseline")
+) %>% select(spec, beta, pct, se, p, n, r2)
+
+
+```
+
+\begin{center}
+\textbf{Abstract}
+\end{center}
+
+\vspace{0.3cm}
+
+
+Minimum wage remains a widely debated and divided topic due to its effects on employment and prices and the consequences to workers and consumers welfare. This paper examines the effect of state level minimum wage increase in California and New York on state level employment in the leisure and hospitality sector and food away from home prices. California shows a decrease in employment between 2% to 3.6% whereas New York shows an increase in employment between 2.34% to 7.36% compared to control states. California shows a 5.35% increase in prices whereas New York shows 2.80% compared to their respective control states. Findings are consistent with existing literature for price level,, but less consistent for the employment level. 
+
+
+\newpage
+## Introduction
+
+The federal minimum was last increased from $6.55 to $7.25 per hour per the Fair Minimum Wage Act of 2007 in January 2009. Updating the minimum wages at the federal level has been an ongoing debate with strong opinions on each side having strong beliefs regarding the consequences of implementing such a policy. Recently proposals have been put forth to increase minimum wage to around $15.00 an hour to even $30.00 an hour (Economic Policy Institute, 2023). 
+
+Proposed minimum wage increase of such magnitude would have far reaching consequences which requires in-depth study of possible effects. 
+Supporters of an increase in minimum wages argue that raising the minimum wage will be beneficial to low-wage employees as they are able to improve their standard of living, especially to offset inflation effects as well as inject the local economy. Opposition to such a policy argue that increasing the minimum wages can be detrimental to the employees  as rising wages can lead to employees losing employment, burden to business especially small business as well as raise the cost to consumers. The disagreements on potential effects are exacerbated as the opinions also differ in terms of political party lines. Democrats and Democratic lawmakers are mostly in favor of increasing wages and whereas Republican and Republican lawmakers are wary of the consequences of the increase which makes it harder for lawmakers to come to an agreement (Pew Research Center, 2019).
+
+The federal level minimum wages have been changed around 22 times since the inception of the policy under the Fair Labor Standards Act of 1938 (Economic Policy Institute, 2023). There have been numerous cases of minimum wages at state and local level. For example, New York and California have gradually increased their state minimum wage at $16.00 an hour and $16.90 an hour respectively. Such changes in state level minimum wages provides an opportunity to study the effects of the state minimum increase on the affected agents.
+
+This project seeks to study the effect of minimum wage increase in the state of California and New York, focusing on the restaurant sector, with treatment year as  2014.The food services sector makes up around  45% of the employees earning at the minimum wage (Business Insider, 2014 ). Hence, a policy increasing the minimum wage would have direct and large consequences to the restaurant sector. By studying the restaurant sector in California and New York, the paper attempts to look at the welfare of the employees as well as the cost to the consumers and infer the consequences of a large federal minimum wage increase.
+
+
+\bigskip
+
+# Literature Riview
+
+Papers that have researched the effects of minimum wage increase remained concentrated on pricing and hiring decisions by the employers. This paper follows a similar guideline,studying the employment level and the prices level. One of the literature that has studied the effect of state minimum wage is  by Card and Krueger(1994) that looked at the effect of state minimum wage increase from $4.25 to $5.05 for fast food chains in New Jersey relative to Pennsylvania .This paper provided a guidance on what sector I could focus on as well the Difference in Difference modeling I chose for my project as well. While this paper focuses on fast food franchises to study the effect of minimum wage in treatment and control states, my project will be in a more broad framework, using the restaurant and service industry including limited or full service restaurants as well as the convenience stores.
+
+Card and Krueger(1994) found no evidence that minimum wage increase in New Jersey’s fast food restaurants reduced employment. They instead found an increase in employment when compared to Pennsylvania that did not increase minimum wage or within the state that were already paying higher than the minimum wage.In California, Assembly Bill 1228, increased the state minimum wage to $20 for fast food chains with more than sixty locations nationwide. A paper by Clemens, Edwards, and Meers (2025) found that fast food employment declined by 2.7 percent relative to employment in the fast food sector elsewhere in the United States. While both of the papers study the effects on fast food restaurant employment, this paper looks at the employment level in leisure and hospitality with focus in food services and drinking places.
+
+Renkin, Montailoux, and Siegenthaler (2020) studied the effect of minimum wage increase on prices that is passed on to the consumers. Their study conducted on effects on the US retail stores found that a 10% increase in minimum wage increase leads to a 0.36% increase in prices Study on California’s $20 minimum wage hike on fast food chains by Clemens, Edwards, Meer, and Nguyen(2026) studying the effect on food away from home across 21 statistical metropolitan areas (MSAs) found increases in prices between 3.4 percent percent relative to food away from home elsewhere in the United States. The price range increased from 3.3 to 3.6 percent after controlling for macroeconomic conditions. While the law is mostly set to affect fast food chains, their study relies on previous paper by Reich and Soninkiy(2025) that spillover effects on full service restaurants are nontrivial. A paper by Cengiz, Due, Lindner, and Zipperer(2019) that studied an overall effect on the  minimum wages  on low-wage jobs from 1979 and 2016 found  that the overall number of low-wage jobs stayed the same following wage increases.
+
+While the cost of the labor wage increase has been found to be consistently passed to the consumers through higher prices at similar magnitudes, the effect on employment has been harder to infer. The patterns for decision making for restaurant owners on passing cost is based on the behavior of consumer consumption patterns such as consumers having cheaper alternatives such as eating at home as substitutes. However, labor decision making would depend on the overall production capabilities of the setting, the labor market that the employer faces which are harder to modify and change in the short run.
+
+While this project follows the modeling of the existing literature, it is to be noted that the project still does not address a federal level minimum wage increase such as what would be the optimal level of increase considering the vast differences in state economic conditions that would be required for a base level standard of living. It also cannot answer what would be considered a base level standard of living.
+
+
+# Data
+
+## Data Sources and State Pairings
+
+\small
+The primary source of data is the U.S Bureau of Labor Statistics and U.S Bureau of Economic Analysis from January 2010 to December 2023. The post-treatment data is from January 2024. All the data sets were downloaded as a csv file from the Federal Reserve Bank of St. Louis (FRED) website. Two state pairings are as follows:
+
+1.California (Treatment) versus Arizona and Nevada (Control): Employment Outcomes
+
+2.New York (Treatment) versus Pennsylvania (Control): Employment Outcomes
+
+The data used are state minimum wages which tracks the state minimum wages and all employees in the food services and drinking places under leisure and hospitality for each state. This is to study the number of how the minimum wages affect the number of employees in the restaurant sector.
+ 
+1.California (Treatment) versus Arizona (Control): Price Outcomes
+
+2.New York (Treatment) versus Pennsylvania (Control): Price Outcomes
+
+The data used are Consumer Price Index for All Urban Consumers: Food Away from Home San Francisco-Oakland-Hayward for California to Phoenix-Mesa-Scottsdale for Arizona as well as New York -Newark-Jersey City for New York and Philadelphia-Camden Wilmington for Pennsylvania. The  U.S Bureau of Labor Statistics only tracks certain metropolitan areas for this specific data and a proxy for Nevada was not available and hence, for this measurement, California will only be compared against Arizona
+
+Empirical Methods
+
+Pre-Trend checks for Employment in California compared to Arizona and Nevada look credible as they closely follow each other year 2010 o nwards, with slight deviation by Arizona around 2013. Pre-Trend checks for Employment in New York compared to Pennsylvania does not hold as employment trends to be diverging 2010 and gets larger over the course with employment in New York growing at 2.9 percentage point higher comparatively pre-2014. Violation of the parallel trends assumption makes the DID inferences harder to credibly interpret.
+
+Pre-Trend checks for log food away from home hold for California with Arizona as well as for New York with Pennsylvania.
+
+One threat of the results is that service and fast-food employment and take away from home food prices in California and New York compared to their respective control states were already on the divergent path before the pre-treatment year of 2014. This is most evident in the employment case for New York and Pennsylvania where employment was on a divergent path 2010 on wards and hence, a DID effect may be polluted. 
+
+The method is based on the assumption that California, Arizona, and Nevada as well as New York and Pennsylvania share many similar features as neighboring states such as geographical location, industrial, and economic makeup. It is to be noted that state level differences still remain that could account for differences in empirical findings. For example, New York has unique population density and cultural diversity that vastly influences its economic makeup. 
+
+
+## Difference-in-Differences specification
+
+\textbf{Estimating equation:}
+
+$$
+\ln y_{st} \;=\; \alpha + \beta \cdot (\text{Treat}_s \times \text{Post}_t)
+              + \gamma_s + \delta_t  + \varepsilon_{st}
+$$
+
+\begin{itemize}\small
+  \item $\ln y_{st}$ = log food-services employment \emph{or} log
+        food-away-from-home CPI in state $s$, year $t$.
+  \item $\text{Treat}_s = 1$ for CA (or NY); $\text{Post}_t = 1$ for
+        years $\geq 2014$.
+  \item $\gamma_s, \delta_t$ = state and year fixed effects.
+  \item $\beta$ = average treatment effect on the treated under
+        parallel trends. Standard errors are HC1 robust.
+\end{itemize}
+
+\bigskip
+
+\textbf{Identifying assumption:} The main assumption is that the treated state of California and New York would have followed similar employment and food away from home would have followed respective parallel trajectories in the absence of minimum wage differences post the treatment year of 2014. 
+
+## Pre-trends check
+
+```{r pretrends, fig.height=3.2, out.width="\\linewidth"}
+pretrends <- bind_rows(
+  panel_ca_emp %>% mutate(panel = "CA-emp", outcome = ln_emp),
+  panel_ny_emp %>% mutate(panel = "NY-emp", outcome = ln_emp),
+  panel_ca_cpi %>% mutate(panel = "CA-cpi", outcome = ln_cpi),
+  panel_ny_cpi %>% mutate(panel = "NY-cpi", outcome = ln_cpi)
+) %>%
+  group_by(panel, state) %>%
+  mutate(outcome_norm = outcome - outcome[year == YEAR_MIN]) %>%
+  ungroup()
+
+ggplot(pretrends, aes(year, outcome_norm,
+                      color = state, linetype = factor(treat))) +
+  geom_vline(xintercept = TREAT_YEAR, linetype = "dashed",
+             color = "gray40", linewidth = 0.3) +
+  geom_line(linewidth = 0.9) +
+  facet_wrap(~ panel, ncol = 4, scales = "free_y") +
+  scale_color_manual(values = c(CA = "#d62728", NY = "#1f77b4",
+                                AZ = "#ff7f0e", NV = "#9467bd",
+                                PA = "#2ca02c")) +
+  scale_linetype_manual(values = c(`0` = "dashed", `1` = "solid"),
+                         guide = "none") +
+  scale_x_continuous(breaks = c(2010, 2014, 2018, 2022)) +
+  labs(x = NULL, y = "Log change from 2010", color = NULL,
+       caption = "Solid = treated state. Dashed vertical line = 2014 phase-in.") +
+  theme_minimal(base_size = 9) +
+  theme(legend.position = "bottom",
+        plot.caption = element_text(size = 7, color = "gray40"),
+        strip.text = element_text(face = "bold"))
+```
+
+\small
+\textbf{} CA, CA-cpi, and NY-cpi panels track their controls
+closely before 2014 --- parallel-trends assumption looks credible.
+
+The NY-emp panel does not: New York food-services employment was already growing about 2.9 pp/yr faster than Pennsylvania pre-2014.NY-emp results need to be read with that caveat.
+
+# Findings
+
+## Main DiD results
+
+```{r results-table, results='asis'}
+did_results %>%
+  mutate(
+    beta = sprintf("%+.4f", beta),
+    pct  = sprintf("%+.2f%%", pct),
+    se   = sprintf("%.4f",   se),
+    p    = sprintf("%.3f",   p),
+    r2   = sprintf("%.3f",   r2)
+  ) %>%
+  rename(Specification = spec, `DiD coef.` = beta, `% effect` = pct,
+         `SE (HC1)` = se, `p-value` = p, `N` = n, `R²` = r2) %>%
+  kable("latex", booktabs = TRUE, linesep = "",
+        align = c("l","r","r","r","r","r","r"),
+        caption = "DiD coefficient on (Treat $\\times$ Post).") %>%
+  kable_styling(font_size = 7, latex_options = c("scale_down","HOLD_position")) %>%
+  row_spec(0, bold = TRUE) %>%
+  pack_rows("Employment outcomes (log food-services employment)", 1, 4,
+            latex_gap_space = "0.4em") %>%
+  pack_rows("Price outcomes (log CPI food-away-from-home)", 5, 6,
+            latex_gap_space = "0.4em")
+```
+
+\small
+Employment in California decreased around 3.62% compared to Nevada and Arizona; the result is statistically significant at p-value of 0.053. After controlling for the pre-existing employment trends, the employment in California decreased around 2%; the result is now not statistically significant at p-value of 0.109 however. The decrease in employment is similar to findings by Clemens, Edwards, and Meers(2025) and contradictory to Card and Kruger(1994) paper.
+
+Employment in New York increased around 7.46 % compared to Pennsylvania at the base level and around 2.34% after accounting for pre-existing employment trends. The baseline estimate is statistically significant at p-value of 0.005 and similar to California treatment estimate is not statistically significant when the estimate accounts for lag employment effects at p-value of 0.199. This finding is contradictory to what an economic model would suggest when cost of input of production increases. It is to be noted that this particular model violated the pre-treatment parallel assumption which showed that employment trends were already different between New York and Pennsylvania and the wage changes between them cannot be reliably accounted for the employment differences in the model.
+
+Prices for food away from home in California increased by 5.35% compared to Arizona whereas New York saw an increase in 2.80% compared to Pennsylvania. Both of the estimates are statistically significant at p-value of 0.000 and 0.00072 for California and New York respectively. This is in line with the existing literature that prices increase for consumers due to labor wage increase.
+
+
+California Employment
+
+```{r, fig.width=6, fig.height=4, out.width="0.9\\linewidth"}
+plot_emp <- panel_ca_emp %>%
+  group_by(state) %>%
+  mutate(emp_norm = emp / emp[year == YEAR_MIN] * 100) %>%
+  ungroup()
+
+ggplot(plot_emp, aes(year, emp_norm, color = state, linetype = state)) +
+  geom_vline(xintercept = TREAT_YEAR, linetype = "dashed",
+             color = "gray40", linewidth = 0.4) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 1.6) +
+  scale_color_manual(values = c(CA = "#d62728",
+                                AZ = "#ff7f0e", NV = "#9467bd")) +
+  scale_linetype_manual(values = c(CA = "solid",
+                                    AZ = "dashed", NV = "dashed")) +
+  scale_x_continuous(breaks = seq(YEAR_MIN, YEAR_MAX, 2)) +
+  labs(x = NULL, y = "Food-services employment (2010 = 100)",
+       color = "State", linetype = "State",
+       caption = "California (solid) tracks the AZ-NV average closely until 2014, then diverges downward.") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "right",
+        plot.caption = element_text(size = 7, color = "gray40"))
+```
+
+While Difference in Differences findings for employment in California showed decrease in employment in baseline model, checking the employment levels for all three states shows differences in employment when states are compared individually. 
+
+Figure shows employment in food services in California followed closely to Nevada and Arizona and began diverging slowly and then at a higher level after treat year 2014. Note that while employment is higher than Arizona, it is the opposite(lower) compared to Nevada and remains so till 2020. However,following 2020,the employment remains lower compared to both Arizona and Nevada and at a higher magnitude. There could be possible effects of Covid pandemic. 
+
+The pooled model for California employment that provides the weight average treatment across all treated states and time periods hides the effects across each control state. 
+
+# Conclusion
+
+
+
+Studying the consequences of a federal minimum is tough due to vast differences across economic conditions and effects on various economic agents. While recent existing literature seems to agree on the dis-employment effect of the employees, there are still debates to be had on the effect varying degrees of magnitude of effect(this percent vs that percent). Consumers seem to bear the majority of cost of minimum wage increase in the form of higher prices and a case can be made that a federal minimum increase will increase the prices of the product, the magnitude of the state level that focuses on sectors of the economy would be harder to apply to the national level with multiple sector effects. 
+
+While I do agree that there is a benefit to increasing federal minimum wages, especially for states that follow the federal wage level but facing increasing cost of living, I do think that more research needs to be done looking at different states. At that point, states that need higher wages may do so in accordance to their economic conditions. Study could be done regarding the spillover effects of an increase in wages one state compared to another. While in my project, California, Nevada, and Arizona do gradually increase their wages, and that might induce spillover effects on each other, whereas Pennsylvania remained firmly at $7.25 compared to New York which has increased firmly. 
+
+The welfare of employees of the sector that pay at minimum wages to benefit overall as their wages increase, and having little evidence that increasing minimum wages leads to decreased employment. Whereas on the other hand, the prices of goods and services in many sectors that are consumed by the lower bracket of income increasing might offset the benefits. There should be more research done on the employees who are in the field and their consumption pattern and how that changes after wage increases as well. While I do doubt that an increase in wages would drastically lead to unwanted consumption patterns, more could be done to look at the overall benefits such as an overall income and expenses comparison for low wage employees. 
+
+\newpage
+
+# References
+
+Card, David, and Alan B. Krueger. 1994. *Minimum Wages and Employment: A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania.* American Economic Review.
+
+Cengiz, Doruk, Arindrajit Dube, Attila Lindner, and Ben Zipperer. 2019. *The Effect of Minimum Wages on Low-Wage Jobs: Evidence from the United States Using a Bunching Estimator.* National Bureau of Economic Research Working Paper No. 25434.
+
+Clemens, Jeffrey, Olivia Edwards, and Jonathan Meer. 2025. *Did California's Fast Food Minimum Wage Reduce Employment?* National Bureau of Economic Research Working Paper No. 34033.
+
+Clemens, Jeffrey, Olivia Edwards, Jonathan Meer, and Joshua D. Nguyen. 2026. *The Effects of California's \$20 Fast Food Minimum Wage on Prices.* National Bureau of Economic Research Working Paper No. 34990.
+
+Economic Policy Institute. 2023. *A History of the Federal Minimum Wage: 85 Years Later the Minimum Wage is Far from Equitable.* Available at: https://www.epi.org/blog/a-history-of-the-federal-minimum-wage-85-years-later-the-minimum-wage-is-far-from-equitable/
+
+Pew Research Center. 2019. *Two-Thirds of Americans Favor Raising Federal Minimum Wage to \$15 an Hour.* Available at: https://www.pewresearch.org/short-reads/2019/07/30/two-thirds-of-americans-favor-raising-federal-minimum-wage-to-15-an-hour/
+
+Renkin, Tobias, Claire Montialoux, and Michael Siegenthaler. 2020. *The Pass-through of Minimum Wages into US Retail Prices: Evidence from Supermarket Scanner Data.*
+
+Business Insider. 2014. *Distribution of Minimum Wage Workers.* Available at: https://www.businessinsider.com/distribution-of-minimum-wage-workers-q1-2014-6
+
+CNBC. 2026. *Federal Minimum Wage Increase and Affordability Debate.* Available at: https://www.cnbc.com/2026/04/29/federal-minimum-wage-increase-affordability.html
+
